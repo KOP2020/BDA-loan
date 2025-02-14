@@ -1,0 +1,77 @@
+# 项目配置文件
+
+# 路径配置
+paths:
+  data:
+    raw: data/raw/loan_final313.csv.gz
+    processed: data/processed/loan_processed.csv.gz
+
+  visualization:
+    figures: docs/figures
+
+# 预处理配置
+preprocessing:
+  # 要删除的列
+  columns_to_drop:
+    - id  # ID列不参与建模
+    - issue_d  # 已有year列，不需要具体日期
+    - final_d  # 已有year列，不需要具体日期。
+    # 其实year是不是也可以不要。毕竟不分析时序关系
+    - year
+    
+  # 原始categorical变量及其对应的数值编码列
+  categorical_mappings:
+    loan_condition: loan_condition_cat
+    grade: grade_cat
+    purpose: purpose_cat
+    home_ownership: home_ownership_cat
+    term: term_cat
+    interest_payments: interest_payment_cat
+    application_type: application_type_cat
+    income_category: income_cat
+
+# 特征工程配置
+feature_engineering:
+  # 特征选择配置
+  feature_selection:
+    variance_threshold: 0.01
+    correlation_threshold: 0.95
+    k_best_features: 20
+  
+  # 特征生成配置
+  feature_generation:
+    numeric_interactions: true
+    polynomial_degree: 2
+    time_features: true
+
+# 模型训练配置
+model:
+  # 通用配置
+  random_state: 42
+  test_size: 0.2
+  
+  # 交叉验证
+  cv:
+    n_splits: 5
+    shuffle: true
+  
+  # 评估指标
+  metrics:
+    - accuracy
+    - precision
+    - recall
+    - f1
+  
+  # 模型超参数
+  hyperparameters:
+    logistic_regression:
+      C: 1.0
+      max_iter: 1000
+    random_forest:
+      n_estimators: 100
+      max_depth: 10
+      min_samples_split: 2
+    xgboost:
+      n_estimators: 100
+      max_depth: 6
+      learning_rate: 0.1
