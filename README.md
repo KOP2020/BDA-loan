@@ -11,9 +11,6 @@
 │   ├── processed/    # 处理后的数据
 ├── docs/              # 文档目录
 ├── notebooks/         # Jupyter notebooks目录
-│   ├── 01_EDA.ipynb  # Exploratory探索性数据分析
-│   ├── 02_feature_engineering.ipynb  # 特征工程
-│   ├── 03_modeling.ipynb  # 模型训练与评估
 ├── src/               # 源代码目录
 │   ├── data/         # 数据处理相关代码
 │   ├── features/     # 特征工程相关代码
@@ -25,17 +22,19 @@
 ## 项目设置
 
 1. conda创建虚拟环境：
-
+```bash
+conda create -n loan-analysis python=3.8
+conda activate loan-analysis
+```
 
 2. 安装依赖：
 ```bash
 pip install -r requirements.txt
 ```
 
-## 主要功能
+## 开发路线
 
 - 探索性数据分析（EDA）
 - 特征工程和选择
 - 模型训练与评估
-- 数据可视化
 - 模型解释
