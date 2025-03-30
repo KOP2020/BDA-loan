@@ -1,6 +1,6 @@
 # loan数据分析项目
 
-这是一个基于传统ml的贷款数据分析项目，关注数据可视化和分析过程。
+这是一个ml的贷款数据分析项目，关注BDA全流程。
 
 ## 项目结构
 
@@ -10,7 +10,6 @@
 │   ├── raw/          # 原始数据
 │   ├── processed/    # 处理后的数据
 ├── docs/              # 文档目录
-├── notebooks/         # Jupyter notebooks目录
 ├── src/               # 源代码目录
 │   ├── data/         # 数据处理相关代码
 │   ├── features/     # 特征工程相关代码
@@ -32,61 +31,67 @@ conda activate loan-analysis
 pip install -r requirements.txt
 ```
 
-## 特征工程Pipeline
+## 核心组件使用指南
 
-我们的特征工程pipeline遵循以下顺序：
+项目使用一个完整的分析流程，所有核心组件都在主脚本 `main.py` 中集成运行。下面是主要组件及其功能：
 
-### 1. 特征创建/提取 (Feature Creation/Extraction)
-- 基础特征创建
-  - 时间特征（如贷款期限的年月特征）
-  - 数值特征的统计特征（均值、方差等）
-  - 类别特征的编码特征
-- 高级特征创建
-  - 特征组合（如收入负债比）
-  - 基于领域知识的特征
-  - 基于聚类的特征（计算样本到各类群体中心的距离）
+### 1. 数据预处理 (preprocessor.py)
 
-### 2. 特征变换 (Feature Transformation)
-- 缺失值处理
-  - 数值型：均值/中位数填充
-  - 类别型：众数/特殊类别填充
-- 异常值处理
-  - 基于IQR的异常值检测
-  - 基于领域知识的异常值处理
-- 编码转换
-  - 类别特征：One-hot/Label encoding
-  - 时间特征：周期性编码
-- 标准化/归一化
-  - StandardScaler：均值为0，方差为1
-  - MinMaxScaler：缩放到特定区间
+`src/data/preprocessor.py` 负责数据清洗和预处理工作，包括：
+- 筛选2007-2010年的数据
+- 删除不需要的列
+- 处理分类变量
 
-### 3. 特征选择 (Feature Selection)
-- 单变量特征选择（Univariate Selection）
-  - 基于统计检验选择最相关特征
-- 递归特征消除（RFE）
-  - 使用模型反复训练，逐步消除不重要特征
-- 基于模型的特征选择
-  - 使用树模型的特征重要性
-  - L1正则化（Lasso）的特征筛选
+可以单独运行预处理：
+```bash
+# 单独运行数据预处理
+python src/data/preprocessor.py
+```
 
-### 4. 降维 (Dimensionality Reduction)
-- PCA（Principal Component Analysis）
-  - 保留解释95%方差所需的主成分
-  - 用于处理高度相关的特征
-- 其他降维方法（根据需要）
-  - LDA（Linear Discriminant Analysis）
-    - LDA是有监督的降维方法：它会考虑类别信息，找到最能区分不同类别的方向
-  - t-SNE（用于可视化）
+### 2. 特征选择 (feature_selector.py)
 
-### Pipeline实现
-- 使用sklearn的Pipeline确保特征工程步骤的一致性
-- 所有参数都在config文件中配置
-- 提供特征重要性分析和可视化
-- 支持特征工程步骤的灵活组合
+`src/features/feature_selector.py` 使用递归特征消除(RFE)方法选择最重要的特征：
+- 自动过滤出数值特征
+- 根据重要性选择指定数量的特征
+- 生成特征重要性图表
 
-## 开发路线
+**注意**：此组件通常不单独运行，而是在main.py工作流中被调用。当然，你可以自己写单独运行它的指令
 
-- 探索性数据分析（EDA）
-- 特征工程和选择
-- 模型训练与评估
-- 模型解释
+### 3. 模型训练与评估 (trainer.py)
+
+`src/models/trainer.py` 包含 `RegressionTrainer` 类，用于训练和评估多种回归模型：
+- 线性回归、岭回归、Lasso回归、弹性网络
+- 随机森林、梯度提升回归
+- 自动进行超参数调优
+- 评估模型性能并选择最佳模型
+
+**注意**：在main.py工作流中被调用。
+
+### 4. 一键运行全流程 (main.py)
+
+`main.py` 是项目的主入口点，它集成了上述所有组件为一个完整的BDA分析流程：
+
+1. 首先加载预处理后的数据
+2. 然后调用feature_selector进行特征选择（默认选择7个最重要的特征）
+3. 最后调用RegressionTrainer训练和评估所有模型，并选出最佳模型
+
+使用方法非常简单：
+```bash
+# 运行整个分析流程
+python main.py
+```
+
+运行后将在 `data/processed` 目录生成以下文件：
+- `features_selected.csv`: 特征选择后的数据
+- `feature_importance.png`: 特征重要性图表
+- `regression_results.csv`: 各模型性能指标
+- `model_comparison.png`: 模型性能比较图
+- `best_model.pkl`: 保存的最佳模型
+
+## 项目输出
+
+完整运行后，项目将输出以下分析结果：
+1. 选择的最重要特征列表
+2. 各回归模型的性能指标（RMSE和R²值）
+3. 最佳模型及其超参数
+4. 模型性能比较可视化图表

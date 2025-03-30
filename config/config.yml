@@ -18,7 +18,11 @@ preprocessing:
     - final_d  # 已有year列，不需要具体日期。
     # 其实year是不是也可以不要。毕竟不分析时序关系
     - year
-    
+    - recoveries  # 与贷款收回过程相关，不直接影响还款能力
+    - total_pymnt  # 与目标变量高度相关
+    - loan_condition  # 与目标变量高度相关
+    - loan_condition_cat  # 与目标变量高度相关
+  
   # 原始categorical变量及其对应的数值编码列
   categorical_mappings:
     loan_condition: loan_condition_cat
@@ -43,35 +47,3 @@ feature_engineering:
     numeric_interactions: true
     polynomial_degree: 2
     time_features: true
-
-# 模型训练配置
-model:
-  # 通用配置
-  random_state: 42
-  test_size: 0.2
-  
-  # 交叉验证
-  cv:
-    n_splits: 5
-    shuffle: true
-  
-  # 评估指标
-  metrics:
-    - accuracy
-    - precision
-    - recall
-    - f1
-  
-  # 模型超参数
-  hyperparameters:
-    logistic_regression:
-      C: 1.0
-      max_iter: 1000
-    random_forest:
-      n_estimators: 100
-      max_depth: 10
-      min_samples_split: 2
-    xgboost:
-      n_estimators: 100
-      max_depth: 6
-      learning_rate: 0.1
