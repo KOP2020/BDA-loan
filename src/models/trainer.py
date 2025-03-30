@@ -87,7 +87,11 @@ class RegressionTrainer:
         final_model = clone(model)
         final_model.fit(X, y)
         
-        return final_model, avg_rmse
+        # 计算平均 R² 值
+        avg_r2 = np.mean([r2_score(y[test_idx], clone(final_model).fit(X[train_idx], y[train_idx]).predict(X[test_idx])) 
+                         for train_idx, test_idx in outer_cv.split(X)])
+        
+        return final_model, {'rmse': avg_rmse, 'r2': avg_r2}
     
     def train_model_with_nested_cv(self, model_name, base_model, param_grid, X, y):
         """使用嵌套交叉验证训练并评估模型
@@ -100,7 +104,7 @@ class RegressionTrainer:
             y: 目标变量
             
         返回:
-            训练好的最终模型和平均RMSE
+            训练好的最终模型和评估指标字典
         """
         start_time = time.time()
         outer_cv = KFold(n_splits=self.outer_cv, shuffle=True, random_state=42)
@@ -136,8 +140,9 @@ class RegressionTrainer:
             # 在测试集上评估
             y_pred = best_model.predict(X_test)
             rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+            r2 = r2_score(y_test, y_pred)  # 计算R²
             outer_scores.append(rmse)
-            print(f"折 {i+1} RMSE: {rmse:.4f}")
+            print(f"折 {i+1} RMSE: {rmse:.4f}, R²: {r2:.4f}")  # 添加R²输出
         
         avg_rmse = np.mean(outer_scores)
         print(f"\n{model_name} 嵌套CV评估: RMSE={avg_rmse:.4f} (std={np.std(outer_scores):.4f})")
@@ -167,7 +172,12 @@ class RegressionTrainer:
         elapsed = time.time() - start_time
         print(f"{model_name} 训练完成，耗时: {elapsed:.2f}秒")
         
-        return final_model, avg_rmse
+        # 计算平均 R² 值
+        avg_r2 = np.mean([r2_score(y[test_idx], clone(final_model).fit(X[train_idx], y[train_idx]).predict(X[test_idx])) 
+                         for train_idx, test_idx in outer_cv.split(X)])
+        
+        # 返回模型和评估指标字典
+        return final_model, {'rmse': avg_rmse, 'r2': avg_r2}
     
     def train_ridge_nested_cv(self, X, y):
         """使用嵌套交叉验证训练岭回归模型"""
@@ -246,8 +256,8 @@ class RegressionTrainer:
         self.models = models
         
         # 找出最佳模型
-        self.best_model = min(results, key=results.get)
-        self.best_score = results[self.best_model]
+        self.best_model = min(results, key=lambda x: results[x]['rmse'])
+        self.best_score = results[self.best_model]['rmse']
         
         # 可视化结果
         self.visualize_nested_cv_results(results)
@@ -264,7 +274,8 @@ class RegressionTrainer:
         """可视化嵌套交叉验证结果"""
         results_df = pd.DataFrame({
             'Model': list(results.keys()),
-            'RMSE': list(results.values())
+            'RMSE': [results[model]['rmse'] for model in results],
+            'R²': [results[model]['r2'] for model in results]
         }).sort_values('RMSE')
         
         # 保存到CSV
@@ -280,7 +291,7 @@ class RegressionTrainer:
             plt.text(width + 0.1, bar.get_y() + bar.get_height()/2, f'{width:.2f}',
                     ha='left', va='center')
         
-        plt.title('嵌套交叉验证模型性能比较 (RMSE越低越好)')
+        plt.title('nested_cv RMSE Comparison of Regression Models (Lower is Better)')
         plt.xlabel('RMSE')
         plt.tight_layout()
         plt.savefig(self.output_dir / 'nested_cv_model_comparison.png')

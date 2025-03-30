@@ -72,8 +72,7 @@ def main():
     results_df = pd.DataFrame([
         {
             'model': model,
-            'rmse': results[model]['rmse'],
-            'r2': results[model]['r2']
+            'rmse': results[model]
         } for model in results
     ]).sort_values('rmse')
     
